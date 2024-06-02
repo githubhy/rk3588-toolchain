@@ -13,8 +13,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 # https://wiki.t-firefly.com/zh_CN/Core-3588SJD4/linux_compile.html
 # [Note 1] Before that, a little bit cleanup for working around some dpkg issue.
 # Refer to: https://stackoverflow.com/a/72449247
-# [Note 2] ca-certificates is for SSL CA error after executing the `repo` command
+# [Note 2] `ca-certificates` package is for SSL CA error after executing the `repo` command
 # [Note 3] Stopping the repo init colorization prompt: https://groups.google.com/g/repo-discuss/c/T_JouBm-vBU
+# [Note 4] `gpgv2` package is for solving the "repo not signed" issue: https://blog.csdn.net/Rank_d/article/details/116697985
 RUN rm -rf /var/lib/dpkg/info/* \
         && apt-get update \
         && apt-get install -y --no-install-recommends \
@@ -24,6 +25,7 @@ RUN rm -rf /var/lib/dpkg/info/* \
                 unzip \
                 device-tree-compiler ncurses-dev \
                 ca-certificates openssl \
+                gpgv2 \
         && apt-get autoremove -y \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*rm /var/log/alternatives.log /var/log/apt/* \
