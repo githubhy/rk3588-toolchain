@@ -25,7 +25,8 @@ RUN rm -rf /var/lib/dpkg/info/* \
                 unzip \
                 device-tree-compiler ncurses-dev \
                 gpgv2 \
-                bc
+                bc \
+                git-lfs
 RUN apt-get install -y --no-install-recommends \
         ca-certificates openssl
 RUN apt-get autoremove -y \
