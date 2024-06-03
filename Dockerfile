@@ -24,9 +24,11 @@ RUN rm -rf /var/lib/dpkg/info/* \
                 qemu-user-static live-build bison flex fakeroot cmake gcc-multilib g++-multilib \
                 unzip \
                 device-tree-compiler ncurses-dev \
-                ca-certificates openssl \
                 gpgv2 \
-        && apt-get autoremove -y \
+                bc
+RUN apt-get install -y --no-install-recommends \
+        ca-certificates openssl
+RUN apt-get autoremove -y \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*rm /var/log/alternatives.log /var/log/apt/* \
         && rm /var/log/* -r \
