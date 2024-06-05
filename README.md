@@ -10,14 +10,22 @@ docker build --pull --rm -f "Dockerfile" -t ${LABEL}:latest "."
   docker pull dockerhy/rk3588-toolchain
   ```
 2. Create you project folder and change to the folder.
-3. Run the following command to start using this toolchain.
-  - On Mac:
+3. (Only for Windows WSL) If the ext4 usb drive is to be used, run the following commands
+  - run `Windows PowerShell as Administrator`
+  - In the power shell, run `GET-CimInstance -query "SELECT * from Win32_DiskDrive"`
+  - Identify the usb drive ID, which is like `\\.\PHYSICALDRIVE${n}`, where `${n}` is a number
+  - In the same power shell, run `wsl --mount \\.\PHYSICALDRIVE${n}`
+4. Run the following command to start using this toolchain.
+  - Windows(WSL):
     ```
-    docker run -i -v "$PWD":/proj/rk3588 -w /proj/rk3588 dockerhy/rk3588-toolchain /bin/bash
+    docker cp dockerhy/rk3588-toolchain:/usr/local/bin/mount_ext4_in_wsl2.sh .
     ```
-  - On Windows:
     ```
-    docker run -i -v %cd%:/proj/rk3588 -w /proj/rk3588 dockerhy/rk3588-toolchain /bin/bash
+    . ./mount_ext4_in_wsl2.sh
+    ```
+    Follow the instructions in the script.
+    ```
+    docker run -it --rm -v "$PWD":/proj/rk3588 -w /proj/rk3588 dockerhy/rk3588-toolchain
     ```
 4. Now you are in the docker container. You can init the repo and sync the codebase inside the container, as the instructions listed at the [products' site](https://wiki.t-firefly.com/zh_CN/Core-3588SJD4/linux_compile.html?highlight=docker#chu-shi-hua-cang-ku)
    - repo init:
