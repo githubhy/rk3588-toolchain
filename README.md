@@ -9,7 +9,7 @@ docker build --pull --rm -f "Dockerfile" -t ${LABEL}:latest "."
   ```
   docker pull dockerhy/rk3588-toolchain
   ```
-2. (Only for Windows WSL) If the ext4 usb drive is to be used, run the following commands
+2. If the ext4 usb drive is to be used, run the following commands
   - Open `Windows PowerShell` as administrator
   - In the power shell, run0
     ```
@@ -21,9 +21,9 @@ docker build --pull --rm -f "Dockerfile" -t ${LABEL}:latest "."
     wsl --mount \\.\PHYSICALDRIVE${n} --name usbdrive
     ```
     [Reference](https://learn.microsoft.com/en-us/windows/wsl/wsl2-mount-disk)
-  - Open WSL:
+  - Open `WSL`:
     ```
-    docker run -it --rm -v /mnt/usbdrive:/proj/rk3588 -w /proj/rk3588 dockerhy/rk3588-toolchain
+    docker run -it --rm -v /mnt/wsl/usbdrive:/proj/rk3588 -w /proj/rk3588 dockerhy/rk3588-toolchain
     ```
 3. Now you are in the docker container. You can init the repo and sync the codebase inside the container, as the instructions listed at the [products' site](https://wiki.t-firefly.com/zh_CN/Core-3588SJD4/linux_compile.html?highlight=docker#chu-shi-hua-cang-ku)
    - repo init:
