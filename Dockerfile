@@ -2,7 +2,7 @@ FROM amd64/ubuntu:18.04
 
 ARG REPO_SRC_LIST=sources.list
 
-COPY ${REPO_SRC_LIST} /etc/apt/
+# COPY ${REPO_SRC_LIST} /etc/apt/
 COPY format_usb_to_ext4.sh /usr/local/bin/
 
 # Pakage `tzdata` should be installed to make the enviroment vairable `TZ` work
@@ -38,5 +38,4 @@ RUN apt-get autoremove -y \
         && git config --global user.email "user@firefly.com" \
         && git config --global user.name "Firefly User" \
         && git config --global color.ui false \
-        chmod +x /usr/local/bin/format_usb_to_ext4.sh
-
+        && chmod +x /usr/local/bin/format_usb_to_ext4.sh
