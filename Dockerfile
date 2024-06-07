@@ -27,7 +27,8 @@ RUN rm -rf /var/lib/dpkg/info/* \
                 device-tree-compiler ncurses-dev \
                 gpgv2 \
                 bc \
-                git-lfs
+                git-lfs \
+                python3
 RUN apt-get install -y --no-install-recommends \
         ca-certificates openssl
 RUN apt-get autoremove -y \
