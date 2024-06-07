@@ -3,7 +3,7 @@ FROM amd64/ubuntu:18.04
 ARG REPO_SRC_LIST=sources.list
 
 COPY ${REPO_SRC_LIST} /etc/apt/
-COPY mount_ext4_in_wsl2.sh format_usb_to_ext4.sh /usr/local/bin/
+COPY format_usb_to_ext4.sh /usr/local/bin/
 
 # Pakage `tzdata` should be installed to make the enviroment vairable `TZ` work
 # Setting the DEBIAN_FRONTEND environment variable suppresses the prompt that lets you select the correct timezone from a menu.
@@ -38,6 +38,5 @@ RUN apt-get autoremove -y \
         && git config --global user.email "user@firefly.com" \
         && git config --global user.name "Firefly User" \
         && git config --global color.ui false \
-        chmod +x /usr/local/bin/mount_ext4_in_wsl2.sh \
         chmod +x /usr/local/bin/format_usb_to_ext4.sh
 
