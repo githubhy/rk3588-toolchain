@@ -32,7 +32,7 @@ docker build --pull --rm -f "Dockerfile" -t ${LABEL}:latest "."
   1. Change to a local directory
   2. Map the directory into the docker container
       ```
-      docker run -it --rm -v "$PWD":/proj/rk3588 -w /proj/rk3588 dockerhy/rk3588-toolchain
+      docker run -it --rm --privileged -e MOUNT_POINT=/proj/rk3588 -e IMAGE_NAME=rk3588_ext4.img -v "$PWD":/workspace -v "$PWD"/proj/rk3588:/proj/rk3588 dockerhy/rk3588-toolchain
       ```
 ### 3. Things you can do in the container
 Now you are in the docker container. You can init the repo and sync the codebase inside the container, following the instructions listed at the [products' site](https://wiki.t-firefly.com/zh_CN/Core-3588SJD4/linux_compile.html?highlight=docker#chu-shi-hua-cang-ku)
