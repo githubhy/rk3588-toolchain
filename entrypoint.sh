@@ -20,4 +20,4 @@ else
 fi
 
 # Keep the container running to allow inspection or further operations
-tail -f /dev/null
+exec /bin/bash
