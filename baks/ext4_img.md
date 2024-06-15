@@ -1,8 +1,54 @@
-To mount the sparse image within the Docker container, you can modify the script to handle the mounting and ensure the container has the necessary permissions. Here's an updated approach:
+To expand an existing ext4 image, you will need to follow these steps:
 
-### Step 1: Update the Dockerfile
+1. Increase the size of the sparse image file.
+2. Use `resize2fs` to resize the filesystem within the expanded image.
 
-Ensure the `Dockerfile` includes the necessary steps to create the image and also mount it:
+### Step 1: Update the Script
+
+Here is an updated `entrypoint.sh` script that includes expanding the image file:
+
+```bash
+#!/bin/bash
+
+# Get mount point and image name from environment variables
+MOUNT_POINT=${MOUNT_POINT:-/proj/rk3588}
+IMAGE_NAME=${IMAGE_NAME:-.rk3588_ext4.img}
+NEW_SIZE=${NEW_SIZE:-2G}  # Default new size is 2G
+
+# Create the mount point directory
+mkdir -p $MOUNT_POINT
+
+# Check if the image file exists in the current directory
+if [ -f "$IMAGE_NAME" ]; then
+    echo "Image file $IMAGE_NAME found."
+
+    # Expand the sparse image file
+    echo "Expanding $IMAGE_NAME to $NEW_SIZE..."
+    truncate -s $NEW_SIZE $IMAGE_NAME
+
+    # Check and repair the filesystem (optional but recommended)
+    e2fsck -f $IMAGE_NAME
+
+    # Resize the filesystem to use the new size
+    resize2fs $IMAGE_NAME
+
+    # Mount the image
+    echo "Mounting $IMAGE_NAME to $MOUNT_POINT..."
+    mount -o loop $IMAGE_NAME $MOUNT_POINT
+    echo "Image mounted successfully."
+    echo "Contents of $MOUNT_POINT:"
+    ls -l $MOUNT_POINT
+else
+    echo "Image file $IMAGE_NAME not found in the current directory."
+fi
+
+# Keep the container running to allow inspection or further operations
+exec /bin/bash
+```
+
+### Step 2: Update the Dockerfile
+
+Ensure your Dockerfile copies the updated script and sets it as the entry point:
 
 ```Dockerfile
 # Use an official Debian or Ubuntu base image
@@ -14,65 +60,41 @@ RUN apt-get update && apt-get install -y \
     mount \
     && rm -rf /var/lib/apt/lists/*
 
+# Set environment variables with default values
+ENV MOUNT_POINT /proj/rk3588
+ENV IMAGE_NAME .rk3588_ext4.img
+ENV NEW_SIZE 2G
+
 # Set the working directory
 WORKDIR /workspace
 
-# Copy the script into the container
-COPY create_sparse_image.sh .
+# Copy the entrypoint script into the container
+COPY entrypoint.sh .
 
 # Make the script executable
-RUN chmod +x create_sparse_image.sh
+RUN chmod +x entrypoint.sh
 
-# Run the script
-CMD ["./create_sparse_image.sh"]
-```
-
-### Step 2: Update the Script
-
-Update the `create_sparse_image.sh` script to include the mounting process:
-
-```bash
-#!/bin/bash
-
-# Create a sparse file
-truncate -s 1G sparse.img
-
-# Format the sparse file to ext4
-mkfs.ext4 -F sparse.img
-
-# Verify the sparse file
-echo "Actual disk usage of the sparse file:"
-du -h sparse.img
-
-# Create a mount point
-mkdir /mnt/sparseimg
-
-# Mount the sparse file
-mount -o loop sparse.img /mnt/sparseimg
-
-echo "Sparse file mounted at /mnt/sparseimg"
-echo "Contents of the mount point:"
-ls -l /mnt/sparseimg
-
-# Keep the container running to allow inspection
-tail -f /dev/null
+# Set the entrypoint to the script
+ENTRYPOINT ["./entrypoint.sh"]
 ```
 
 ### Step 3: Build the Docker Image
 
-In the directory containing your `Dockerfile` and `create_sparse_image.sh`, build the Docker image:
+Build the Docker image as usual:
 
 ```bash
-docker build -t sparse-image-creator .
+docker build -t rk3588-mounter .
 ```
 
-### Step 4: Run the Docker Container with Additional Privileges
+### Step 4: Run the Docker Container with Volume Mapping and Custom Size
 
-Run the Docker container with the necessary privileges to allow mounting within the container:
+Run the Docker container, specifying the new size for the image, and mapping the container's `/proj/rk3588` directory to a directory on the host:
 
 ```bash
-docker run --rm --privileged -v $(pwd):/workspace sparse-image-creator
+docker run --rm --privileged -v $(pwd):/workspace -v /host/directory:/proj/rk3588 -e NEW_SIZE=2G -it rk3588-mounter
 ```
+
+Replace `/host/directory` with the actual path on your host where you want to expose the contents of `/proj/rk3588` from the container. Adjust `NEW_SIZE` as needed.
 
 ### Full Directory Structure
 
@@ -81,7 +103,7 @@ Ensure your directory structure looks like this:
 ```
 .
 ├── Dockerfile
-└── create_sparse_image.sh
+└── entrypoint.sh
 ```
 
 ### Example Outputs
@@ -89,35 +111,43 @@ Ensure your directory structure looks like this:
 1. **Build the Docker image:**
 
    ```bash
-   docker build -t sparse-image-creator .
+   docker build -t rk3588-mounter .
    ```
 
-2. **Run the container:**
+2. **Run the container with volume mapping, custom size, and interactive shell:**
 
    ```bash
-   docker run --rm --privileged -v $(pwd):/workspace sparse-image-creator
+   docker run --rm --privileged -v $(pwd):/workspace -v /host/directory:/proj/rk3588 -e NEW_SIZE=2G -it rk3588-mounter
    ```
 
-You should see output similar to:
+   - If the image file `.rk3588_ext4.img` is found, you will see:
 
-```
-mke2fs 1.45.5 (07-Jan-2020)
-Creating filesystem with 262144 4k blocks and 65536 inodes
-Filesystem UUID: xxxx-xxxx-xxxx-xxxx-xxxx
-Superblock backups stored on blocks: 
-    32768, 98304, 163840, 229376
+     ```
+     Image file .rk3588_ext4.img found.
+     Expanding .rk3588_ext4.img to 2G...
+     Image expanded successfully.
+     Checking the filesystem...
+     e2fsck 1.45.5 (07-Jan-2020)
+     Pass 1: Checking inodes, blocks, and sizes
+     ...
+     Resize the filesystem...
+     resize2fs 1.45.5 (07-Jan-2020)
+     Resizing the filesystem on .rk3588_ext4.img to 524288 (4k) blocks.
+     The filesystem on .rk3588_ext4.img is now 524288 (4k) blocks long.
 
-Allocating group tables: done                            
-Writing inode tables: done                            
-Creating journal (4096 blocks): done
-Writing superblocks and filesystem accounting information: done 
+     Mounting .rk3588_ext4.img to /proj/rk3588...
+     Image mounted successfully.
+     Contents of /proj/rk3588:
+     total 16
+     drwx------ 2 root root 16384 Jan  1  1970 lost+found
+     ```
 
-Actual disk usage of the sparse file:
-4.0K    sparse.img
-Sparse file mounted at /mnt/sparseimg
-Contents of the mount point:
-total 16
-drwx------ 2 root root 16384 Jan  1  1970 lost+found
-```
+   - If the image file is not found, you will see:
 
-This confirms that the sparse file was created, formatted to ext4, and successfully mounted within the Docker container. The container will remain running due to the `tail -f /dev/null` command, allowing you to inspect the contents or perform additional operations as needed. To stop the container, you can interrupt it with `Ctrl+C`.
+     ```
+     Image file .rk3588_ext4.img not found in the current directory.
+     ```
+
+After the script finishes, you will be dropped into an interactive Bash shell within the container.
+
+By following these steps, you can expand the ext4 image, mount it, expose the directory to the host, and have an interactive shell ready for further operations.

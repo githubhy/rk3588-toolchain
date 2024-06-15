@@ -46,7 +46,7 @@ WORKDIR /workspace
 
 # Set environment variables for entrypoint
 ENV MOUNT_POINT /proj/rk3588
-ENV IMAGE_NAME rk3588_ext4.img
+ENV IMAGE_NAME .rk3588_ext4.img
 
 # Set the entrypoint to the script
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

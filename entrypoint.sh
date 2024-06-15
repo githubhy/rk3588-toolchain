@@ -2,7 +2,7 @@
 
 # Get mount point and image name from environment variables
 MOUNT_POINT=${MOUNT_POINT:-/proj/rk3588}
-IMAGE_NAME=${IMAGE_NAME:-rk3588_ext4.img}
+IMAGE_NAME=${IMAGE_NAME:-.rk3588_ext4.img}
 
 # Create the mount point directory
 mkdir -p $MOUNT_POINT
