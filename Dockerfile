@@ -29,7 +29,8 @@ RUN rm -rf /var/lib/dpkg/info/* \
                 bc \
                 git-lfs \
                 python3 \
-                btrfs-progs
+                btrfs-progs \
+                rsync
 RUN apt-get install -y --no-install-recommends \
         ca-certificates openssl
 RUN apt-get autoremove -y \

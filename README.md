@@ -9,7 +9,18 @@ docker build --pull --rm -f "Dockerfile" -t ${LABEL}:latest "."
   ```
   docker pull dockerhy/rk3588-toolchain
   ```
-### 2-a. If an `ext4` usb drive is to be used
+### 2. File system images
+Since compiling the linux kernel requires a file system that is compatible, both `ext4` and `btrfs` are considered here.
+#### `ext4`
+You need to create a `ext4` disk image and name it as `.rk3588_ext4.img` and then format it to `ext4`. The size of the image should be large enough to use.
+
+Disk expansion is also possible.
+
+Put it right in the working directory in the host.
+#### `btrfs`
+`btrfs` supports mounting multiple disk images as one. And expanding the file systems only needs adding more disk images. So you can have a lot of small sized disk images. `btrfs` will merge them togather.
+
+### 3-a. If an `ext4` drive is to be used
   1. Open `Windows PowerShell` as administrator
   2. In the power shell, run
       ```
@@ -28,13 +39,14 @@ docker build --pull --rm -f "Dockerfile" -t ${LABEL}:latest "."
       ```
       wsl --unmount \\.\PHYSICALDRIVE${n}
       ```
-### 2-b. If no external drive is to be used
-  1. Change to a local directory
+### 3-b. If no `ext4` drive is to be used
+  1. Change to a directory, which could also be on a USB drive. Network drive is also supported.
+
   2. Map the directory into the docker container
       ```
-      docker run -it --rm --privileged -e MOUNT_POINT=/proj/rk3588 -e IMAGE_NAME=.rk3588_ext4.img -v "$PWD":/workspace -v "$PWD"/proj/rk3588:/proj/rk3588 dockerhy/rk3588-toolchain
+      docker run -it --rm --privileged -e MOUNT_POINT=/proj/rk3588 -e IMAGE_NAME=.rk3588_ext4.img -v ${PWD}:/workspace dockerhy/rk3588-toolchain
       ```
-### 3. Things you can do in the container
+### 4. Things you can do in the container
 Now you are in the docker container. You can init the repo and sync the codebase inside the container, following the instructions listed at the [products' site](https://wiki.t-firefly.com/zh_CN/Core-3588SJD4/linux_compile.html?highlight=docker#chu-shi-hua-cang-ku)
 
   1. repo init:
@@ -57,3 +69,11 @@ Now you are in the docker container. You can init the repo and sync the codebase
       ```
       .repo/repo/repo sync -c --no-tags -j1 -f --force-sync
       ```
+## Tips
+
+### Copy between two folders
+As suggest in [this thread](https://unix.stackexchange.com/a/203854), we can use `rsync` to do the heavy lifting
+```
+rsync -avu --delete "/home/user/A/" "/home/user/B"
+```
+You can also add a `-z` option if the tranmission bandwidth is bottleneck.
