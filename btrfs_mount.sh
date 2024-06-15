@@ -46,7 +46,7 @@ done
 # Create a btrfs filesystem spanning the loopback devices if it doesn't already exist
 if ! blkid | grep -q btrfs; then
     echo "btrfs not present. Creating btrfs file system..."
-    mkfs.btrfs -d single $loopdevs
+    mkfs.btrfs -d single $loopdevs > $IMAGE_DIR/btrfs_creation.log
 fi
 
 # Ensure the mount point directory exists
