@@ -55,3 +55,17 @@ mkdir -p $MOUNT_POINT_MERGED
 # Mount the btrfs filesystem
 echo "Mounting $loopdev to $MOUNT_POINT_MERGED"
 mount -t btrfs $loopdev $MOUNT_POINT_MERGED
+
+BTRFS_PATH=${MOUNT_POINT_MERGED} create_snapshot.sh
+
+umount ${MOUNT_POINT_MERGED}
+
+ROOT_MOUNT_POINT=${MOUNT_POINT_MERGED}/
+SNAP_MOUNT_POINT=${MOUNT_POINT_MERGED}/.snapshots
+
+# Mount the root subvolume
+mount -t btrfs -o subvol=@ $loopdev ${ROOT_MOUNT_POINT}
+
+# Mount the snapshots subvolume
+mkdir -p $SNAP_MOUNT_POINT
+mount -t btrfs -o subvol=@snapshots $loopdev ${SNAP_MOUNT_POINT}
