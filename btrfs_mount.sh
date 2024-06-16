@@ -54,7 +54,15 @@ mkdir -p $MOUNT_POINT_MERGED
 
 # Mount the btrfs filesystem
 echo "Mounting $loopdev to $MOUNT_POINT_MERGED"
-mount -t btrfs $loopdev $MOUNT_POINT_MERGED
+# before mounting, let's do some workaround in case the loop devices are considered missing
+# https://www.reddit.com/r/btrfs/comments/ja5nqz/btrfs_thinks_devices_are_missing_at_boot_but_they/
+#for dev in $loopdevs;
+#do
+#    btrfs device scan $dev
+#done
+# Or use the better advice here: https://unix.stackexchange.com/a/755866
+FS_UUID=$(btrfs filesystem show | grep -oP 'uuid: \K[0-9a-fA-F-]+')
+mount UUID=${FS_UUID} $MOUNT_POINT_MERGED
 
 BTRFS_PATH=${MOUNT_POINT_MERGED} create_snapshot.sh
 
@@ -64,8 +72,8 @@ ROOT_MOUNT_POINT=${MOUNT_POINT_MERGED}/
 SNAP_MOUNT_POINT=${MOUNT_POINT_MERGED}/.snapshots
 
 # Mount the root subvolume
-mount -t btrfs -o subvol=@ $loopdev ${ROOT_MOUNT_POINT}
+mount -o subvol=@ UUID=${FS_UUID} ${ROOT_MOUNT_POINT}
 
 # Mount the snapshots subvolume
 mkdir -p $SNAP_MOUNT_POINT
-mount -t btrfs -o subvol=@snapshots $loopdev ${SNAP_MOUNT_POINT}
+mount -o subvol=@snapshots UUID=${FS_UUID} ${SNAP_MOUNT_POINT}
