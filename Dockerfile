@@ -3,7 +3,7 @@ FROM amd64/ubuntu:18.04
 ARG REPO_SRC_LIST=sources.list
 
 # COPY ${REPO_SRC_LIST} /etc/apt/
-COPY entrypoint.sh btrfs_mount.sh /usr/local/bin/
+COPY entrypoint.sh btrfs_mount.sh create_snapshot.sh /usr/local/bin/
 
 # Pakage `tzdata` should be installed to make the enviroment vairable `TZ` work
 # Setting the DEBIAN_FRONTEND environment variable suppresses the prompt that lets you select the correct timezone from a menu.
@@ -41,7 +41,7 @@ RUN apt-get autoremove -y \
         && git config --global user.name "Firefly User" \
         && git config --global color.ui false \
         && cd /usr/local/bin/ \
-        && chmod +x entrypoint.sh btrfs_mount.sh
+        && chmod +x entrypoint.sh btrfs_mount.sh create_snapshot.sh
 
 # Set the working directory
 WORKDIR /workspace
