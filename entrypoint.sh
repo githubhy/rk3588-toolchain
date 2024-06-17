@@ -19,7 +19,7 @@ else
     echo "Image file $IMAGE_NAME not found in the current directory."
 fi
 
-IMAGE_DIR=${IMAGE_DIR} MOUNT_POINT_MERGED=${MOUNT_POINT_MERGED} btrfs_mount.sh
+IMAGE_DIR=${IMAGE_DIR} IMAGES_MOUNT_POINT=${IMAGES_MOUNT_POINT} btrfs_mount.sh
 
 # Keep the container running to allow inspection or further operations
 exec /bin/bash

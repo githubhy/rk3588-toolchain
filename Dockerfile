@@ -51,7 +51,7 @@ ENV MOUNT_POINT /proj/rk3588
 ENV IMAGE_NAME .rk3588_ext4.img
 
 ENV IMAGE_DIR .btrfs_imgs
-ENV MOUNT_POINT_MERGED /mnt/merged
+ENV IMAGES_MOUNT_POINT /mnt/merged
 
 # Set the entrypoint to the script
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

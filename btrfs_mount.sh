@@ -3,8 +3,13 @@
 set -e
 
 IMAGE_DIR=${IMAGE_DIR:-.btrfs_imgs}  # Directory containing disk images
-MOUNT_POINT_MERGED=${MOUNT_POINT_MERGED:-/mnt/merged}
 
+# Mount points
+TEMP_MP=${TEMP_MP:-/mnt/btrfs_temp}
+IMAGES_MOUNT_POINT=${IMAGES_MOUNT_POINT:-/mnt/merged}
+SNAPS_MOUNT_POINT=$IMAGES_MOUNT_POINT/.snapshots
+
+# Clean the loop devices for btrfs
 for device in $(blkid -t TYPE=btrfs -o device | grep "^/dev/loop"); do
     if mount | grep -q "^$device "; then
         umount $device
@@ -39,7 +44,7 @@ do
 
     echo "Attaching $img to $loopdev"
     losetup $loopdev $img
-    #btrfs device add $loopdev $MOUNT_POINT_MERGED
+    #btrfs device add $loopdev $TEMP_MP
     loopdevs="$loopdevs $loopdev"
 done
 
@@ -49,44 +54,46 @@ if ! blkid | grep -q btrfs; then
     mkfs.btrfs -d single $loopdevs > $IMAGE_DIR/btrfs_creation.log
 fi
 
-# Ensure the mount point directory exists
-mkdir -p $MOUNT_POINT_MERGED
 
-# Mount the btrfs filesystem
-echo "Mounting $loopdev to $MOUNT_POINT_MERGED"
-# before mounting, let's do some workaround in case the loop devices are considered missing
+# Option1: before mounting, let's do some workaround in case the loop devices are considered missing
 # https://www.reddit.com/r/btrfs/comments/ja5nqz/btrfs_thinks_devices_are_missing_at_boot_but_they/
 #for dev in $loopdevs;
 #do
 #    btrfs device scan $dev
 #done
-# Or use the better advice here: https://unix.stackexchange.com/a/755866
-# mount UUID=${FS_UUID} $MOUNT_POINT_MERGED
-# Or use the fstab like https://www.reddit.com/r/btrfs/comments/ja5nqz/btrfs_thinks_devices_are_missing_at_boot_but_they/
+# Option 2: use the better advice here: https://unix.stackexchange.com/a/755866
+# mount UUID=${FS_UUID} $TEMP_MP
+# Option 3: use the fstab like method in: https://www.reddit.com/r/btrfs/comments/ja5nqz/btrfs_thinks_devices_are_missing_at_boot_but_they/
 FS_UUID=$(btrfs filesystem show | grep -oP 'uuid: \K[0-9a-fA-F-]+')
 BTRFS_DEVS=$(blkid | grep -Eo '^/dev/loop[0-9]+.*UUID="[0-9a-fA-F-]+.*btrfs.*$')
 # We need to preserve newlines. https://stackoverflow.com/a/5386562
 FSTAB_DEVS=$(echo "$BTRFS_DEVS" | awk -F: '{ print "device="$1 }' | paste -sd ',' -)
 
-echo "UUID=$FS_UUID    $MOUNT_POINT_MERGED    btrfs    defaults,$FSTAB_DEVS 0 0" > /etc/fstab
-mount -a
+echo "UUID=$FS_UUID    $TEMP_MP    btrfs    defaults,$FSTAB_DEVS 0 0" >> /etc/fstab
+echo "UUID=$FS_UUID    $IMAGES_MOUNT_POINT    btrfs    subvol=@,defaults,$FSTAB_DEVS 0 0" >> /etc/fstab
+echo "UUID=$FS_UUID    $SNAPS_MOUNT_POINT    btrfs    subvol=@snapshots,defaults,$FSTAB_DEVS 0 0" >> /etc/fstab
 
-BTRFS_PATH=${MOUNT_POINT_MERGED} create_snapshot.sh
-
-umount ${MOUNT_POINT_MERGED}
-
-ROOT_MOUNT_POINT=${MOUNT_POINT_MERGED}/
-SNAP_MOUNT_POINT=${MOUNT_POINT_MERGED}/.snapshots
+# Create snapshorts
+echo "Mounting $loopdev to $TEMP_MP"
+mkdir -p $TEMP_MP
+mount $TEMP_MP
+BTRFS_PATH=${TEMP_MP} create_snapshot.sh
+umount $TEMP_MP
+rmdir $TEMP_MP
 
 # Mount the root subvolume
-#mount -o subvol=@ UUID=${FS_UUID} ${ROOT_MOUNT_POINT}
+#mount -o subvol=@ UUID=${FS_UUID} ${IMAGES_MOUNT_POINT}
 
 # Mount the snapshots subvolume
-mkdir -p $SNAP_MOUNT_POINT
-#mount -o subvol=@snapshots UUID=${FS_UUID} ${SNAP_MOUNT_POINT}
+# mkdir -p $SNAPS_MOUNT_POINT
+#mount -o subvol=@snapshots UUID=${FS_UUID} ${SNAPS_MOUNT_POINT}
 
 # change to fstab for all subvolumes
-echo "UUID=$FS_UUID    ${ROOT_MOUNT_POINT}    btrfs    subvol=@,defaults,$FSTAB_DEVS 0 0" > /etc/fstab
-echo "UUID=$FS_UUID    ${SNAP_MOUNT_POINT}    btrfs    subvol=@snapshots,defaults,$FSTAB_DEVS 0 0" >> /etc/fstab
+echo "Mounting filesystem root to $IMAGES_MOUNT_POINT"
+mkdir -p $IMAGES_MOUNT_POINT
+mount $IMAGES_MOUNT_POINT
+echo "Mounting snapshots to $SNAPS_MOUNT_POINT"
+mkdir -p $SNAPS_MOUNT_POINT
+mount $SNAPS_MOUNT_POINT
 
-mount -a
+echo "Done."
